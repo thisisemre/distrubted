@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ring of the Middle Earth</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <div class="header-inner">
+        <h1>🗺 Ring of the Middle Earth</h1>
+        <div id="game-meta">
+          <span id="turn-display">Turn: 1</span>
+          <span id="player-display"></span>
+          <span id="status-display" class="status-ok">Connected</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Player Selection Screen -->
+    <div id="player-select" class="overlay">
+      <div class="select-box">
+        <h2>Choose Your Side</h2>
+        <p class="subtitle">Two players required — open this page in two separate browser tabs.</p>
+        <div class="side-buttons">
+          <button id="btn-light" class="btn-light" onclick="selectPlayer('light')">
+            <span class="side-icon">☀️</span>
+            <strong>Light Side</strong>
+            <small>Free Peoples — escort the Ring Bearer to Mount Doom</small>
+          </button>
+          <button id="btn-dark" class="btn-dark" onclick="selectPlayer('dark')">
+            <span class="side-icon">🌑</span>
+            <strong>Dark Side</strong>
+            <small>The Shadow — find the Ring Bearer before it reaches Mount Doom</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Game Layout -->
+    <main id="game-main" class="hidden">
+      <div class="layout">
+
+        <!-- Left Panel: Map -->
+        <section id="map-panel">
+          <h2>Middle Earth</h2>
+          <div id="map-container">
+            <svg id="map-svg" viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg">
+              <!-- Paths drawn dynamically -->
+              <g id="paths-layer"></g>
+              <!-- Regions drawn dynamically -->
+              <g id="regions-layer"></g>
+              <!-- Units drawn dynamically -->
+              <g id="units-layer"></g>
+            </svg>
+          </div>
+          <div id="map-legend">
+            <span class="leg-item"><span class="dot open"></span>Open</span>
+            <span class="leg-item"><span class="dot threatened"></span>Threatened</span>
+            <span class="leg-item"><span class="dot blocked"></span>Blocked</span>
+            <span class="leg-item"><span class="dot temp-open"></span>Temp Open</span>
+          </div>
+        </section>
+
+        <!-- Right Panel: Units + Orders + Log -->
+        <aside id="right-panel">
+
+          <!-- Units List -->
+          <section id="units-panel">
+            <h3>Your Units</h3>
+            <div id="units-list"></div>
+          </section>
+
+          <!-- Order Panel -->
+          <section id="order-panel">
+            <h3>Submit Order</h3>
+            <div id="order-form">
+              <div class="form-row">
+                <label>Unit</label>
+                <select id="sel-unit"></select>
+              </div>
+              <div class="form-row">
+                <label>Order Type</label>
+                <select id="sel-order-type"></select>
+              </div>
+              <div class="form-row" id="row-path-ids">
+                <label>Path IDs <small>(comma-separated)</small></label>
+                <input id="inp-path-ids" type="text" placeholder="e.g. shire-to-bree,bree-to-weathertop">
+              </div>
+              <div class="form-row" id="row-target-region">
+                <label>Target Region</label>
+                <input id="inp-target-region" type="text" placeholder="e.g. weathertop">
+              </div>
+              <div class="form-row" id="row-target-path">
+                <label>Target Path</label>
+                <input id="inp-target-path" type="text" placeholder="e.g. shire-to-bree">
+              </div>
+              <button id="btn-submit-order" onclick="submitOrder()">Submit Order</button>
+              <div id="order-result"></div>
+            </div>
+          </section>
+
+          <!-- Analysis Panel (side-specific) -->
+          <section id="analysis-panel">
+            <h3 id="analysis-title">Analysis</h3>
+            <button onclick="fetchAnalysis()">Refresh Analysis</button>
+            <div id="analysis-output"></div>
+          </section>
+
+          <!-- Event Log -->
+          <section id="log-panel">
+            <h3>Event Log</h3>
+            <div id="event-log"></div>
+          </section>
+
+        </aside>
+      </div>
+    </main>
+
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="overlay hidden">
+      <div class="select-box">
+        <h2 id="game-over-title">Game Over</h2>
+        <p id="game-over-msg"></p>
+        <button onclick="location.reload()">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
