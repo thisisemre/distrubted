@@ -178,8 +178,8 @@ func applyCacheUpdate(event router.Event, worldCache *cache.WorldStateCache) {
 	if err := json.Unmarshal(data, &snapshot); err != nil {
 		return
 	}
-	result := game.TurnResult{Turn: snapshot.Turn, Snapshot: snapshot}
-	worldCache.Update(result, worldCache.RingBearerState.TrueRegion)
+	// UpdateFromBroadcast preserves RingBearerState (route/routeIdx not in broadcast payload).
+	worldCache.UpdateFromBroadcast(snapshot)
 }
 
 func runTurnProcessor(
@@ -223,12 +223,14 @@ func runTurnProcessor(
 			result := game.ProcessTurn(state, pendingOrders)
 			pendingOrders = nil
 
-			worldCache.Update(result, state.RingBearer.TrueRegion)
+			worldCache.Update(result, result.RingBearerState.TrueRegion)
 			if state.SarumanDisabled {
 				worldCache.SetSarumanDisabled()
 			}
 
-			validator.ResetTurnOrders()
+			// Rebuild KTable from updated cache: advances CurrentTurn and refreshes
+			// all unit/path/region state so next turn's orders validate correctly.
+			validator.SetKTable(buildKTable(worldCache))
 
 			if producer != nil {
 				for _, ev := range result.Events {

@@ -4,15 +4,16 @@ import "time"
 
 // TurnResult holds all events produced by processing one turn.
 type TurnResult struct {
-	Turn           int
-	Events         []GameEvent
-	Winner         Side   // "" if no winner yet
-	WinCause       string
-	Draw           bool
-	Snapshot       WorldStateSnapshot
-	RingBearerMoved bool
+	Turn              int
+	Events            []GameEvent
+	Winner            Side   // "" if no winner yet
+	WinCause          string
+	Draw              bool
+	Snapshot          WorldStateSnapshot
+	RingBearerMoved   bool
 	RingBearerExposed bool
-	DetectionResult DetectionResult
+	DetectionResult   DetectionResult
+	RingBearerState   RingBearerState // post-turn ring bearer state (TrueRegion, Route, RouteIdx)
 }
 
 // TurnState is the complete mutable game state for one turn.
@@ -392,6 +393,9 @@ func ProcessTurn(state TurnState, orders []ValidatedOrder) TurnResult {
 	rb2 := state.RingBearer
 	rb2.Exposed = false
 	state.RingBearer = rb2
+
+	// Persist post-turn ring bearer state so caller can update the cache
+	result.RingBearerState = state.RingBearer
 
 	return result
 }

@@ -98,10 +98,28 @@ func (c *WorldStateCache) Update(result game.TurnResult, lightRegion string) {
 	// Update Light Side view with true region
 	c.LightView.RingBearerRegion = lightRegion
 
+	// Persist full ring bearer state (TrueRegion, Route, RouteIdx) so next turn starts correctly
+	c.RingBearerState = result.RingBearerState
+	c.RingBearerState.TrueRegion = lightRegion // authoritative source is lightRegion param
+
 	// DarkView.RingBearerRegion is NEVER set
 	if result.DetectionResult.Exposed {
 		c.DarkView.LastDetectedRegion = result.DetectionResult.DetectedInRegion
 		c.DarkView.LastDetectedTurn = result.Turn
+	}
+}
+
+// UpdateFromBroadcast syncs units and regions from a broadcast snapshot.
+// Does NOT touch RingBearerState (route/routeIdx are not in the broadcast payload).
+// Used by the CacheManager on non-primary instances receiving game.broadcast events.
+func (c *WorldStateCache) UpdateFromBroadcast(snapshot game.WorldStateSnapshot) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, u := range snapshot.Units {
+		c.Units[u.ID] = u
+	}
+	for _, r := range snapshot.Regions {
+		c.Regions[r.ID] = r
 	}
 }
 
