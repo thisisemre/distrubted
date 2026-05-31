@@ -151,6 +151,7 @@ func (c *WorldStateCache) GetPublicState(playerID string) map[string]interface{}
 			"region":   u.Region,
 			"strength": u.Strength,
 			"status":   u.Status,
+			"side":     string(c.UnitConfigs[u.ID].Side),
 		}
 		// Strip ring-bearer region for dark side
 		if c.UnitConfigs[u.ID].Class == game.ClassRingBearer && playerID == game.PlayerDarkSide {

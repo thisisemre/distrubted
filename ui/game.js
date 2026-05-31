@@ -118,6 +118,9 @@ function selectPlayer(side) {
   initMap();
   loadGameState();
   connectSSE();
+
+  // Poll every 5 seconds so turn/units always stay fresh regardless of SSE delivery
+  setInterval(loadGameState, 5000);
 }
 
 // ── SSE ────────────────────────────────────────────────────────────────────
@@ -290,7 +293,15 @@ function renderMapPaths() {
     line.addEventListener('click', () => {
       if (pathId) {
         document.getElementById('inp-target-path').value = pathId;
-        document.getElementById('inp-path-ids').value = pathId;
+        // For route orders: append to existing list instead of overwriting
+        const routeInput = document.getElementById('inp-path-ids');
+        const existing = routeInput.value.trim();
+        if (existing === '' || existing.split(',').map(s=>s.trim()).includes(pathId)) {
+          routeInput.value = existing === '' ? pathId : existing;
+        } else {
+          routeInput.value = existing + ',' + pathId;
+        }
+        addLog(`Path added to route: ${pathId}`);
       }
     });
     pathLayer.appendChild(line);
@@ -357,7 +368,20 @@ function renderMapUnits() {
       dot.setAttribute('stroke', '#fff');
       dot.setAttribute('stroke-width', '0.5');
 
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('y', '-9');
+      lbl.setAttribute('font-size', '9');
+      lbl.setAttribute('font-weight', 'bold');
+      lbl.setAttribute('fill', '#fff');
+      lbl.setAttribute('pointer-events', 'none');
+      lbl.setAttribute('visibility', 'hidden');
+      lbl.textContent = u.id;
+
       g.appendChild(dot);
+      g.appendChild(lbl);
+      g.addEventListener('mouseenter', () => lbl.setAttribute('visibility', 'visible'));
+      g.addEventListener('mouseleave', () => lbl.setAttribute('visibility', 'hidden'));
       g.addEventListener('click', () => selectUnit(u.id));
       unitLayer.appendChild(g);
     });
