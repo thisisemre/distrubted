@@ -1,51 +1,51 @@
-# Presentation Transcript — Ring of the Middle Earth
-## 15-minute live demo + 5-minute Q&A
+# Sunum Transkripti — Ring of the Middle Earth
+## 15 dakika canlı demo + 5 dakika Soru-Cevap
 
 ---
 
-## BEFORE YOU START (Pre-Demo Setup — ~5 minutes, NOT counted in the 15)
+## BAŞLAMADAN ÖNCE (Ön Hazırlık — ~5 dakika, 15 dakikaya dahil değil)
 
-### Step 0 — Reduce turn duration to 30 seconds (faster demo)
+### Adım 0 — Tur süresini 30 saniyeye düşür (demo için hızlandır)
 
 ```bash
-# Edit config: change turn-duration-seconds from 60 to 30
-# In file: config/units.conf, last line:
+# Config dosyasını düzenle: turn-duration-seconds 60'tan 30'a
+# Dosya: config/units.conf, son satır:
 sed -i '' 's/turn-duration-seconds = 60/turn-duration-seconds = 30/' \
   /Users/emreyildiz/distrubuted-2/ring-of-the-middle-earth/config/units.conf
 ```
 
-### Step 1 — Clean restart
+### Adım 1 — Temiz yeniden başlatma
 
 ```bash
 cd /Users/emreyildiz/distrubuted-2/ring-of-the-middle-earth
-docker compose down -v          # wipe volumes (clears stale Kafka/ZK state)
-make up                         # start full system
+docker compose down -v          # volume'ları sil (eski Kafka/ZK durumunu temizler)
+make up                         # tam sistemi başlat
 ```
 
-Wait ~30 seconds for all services healthy:
+~30 saniye bekle, tüm servisler sağlıklı olana kadar:
 ```bash
-docker compose ps               # all services should show "healthy" or "Up"
-curl http://localhost/health     # should return {"status":"ok"}
+docker compose ps               # tüm servisler "healthy" veya "Up" görünmeli
+curl http://localhost/health    # {"status":"ok"} dönmeli
 ```
 
-### Step 2 — Open two browser tabs
+### Adım 2 — İki tarayıcı sekmesi aç
 
 ```
-Tab 1: http://localhost  → click LIGHT SIDE
-Tab 2: http://localhost  → click DARK SIDE
+Sekme 1: http://localhost  → LIGHT SIDE'a tıkla
+Sekme 2: http://localhost  → DARK SIDE'a tıkla
 ```
 
-Arrange both windows side-by-side on screen.
+Her iki pencereyi yan yana ekranda hizala.
 
-### Step 3 — Position units for Scenario 1 (submit these BEFORE 15-min clock)
+### Adım 3 — Senaryo 1 için birimleri konumlandır (15 dakika başlamadan önce gönder)
 
-**Get current turn (should be 1):**
+**Mevcut turu kontrol et (1 olmalı):**
 ```bash
 curl -s "http://localhost/game/state?playerId=light" | python3 -c \
-  "import sys,json; print('Turn:', json.load(sys.stdin)['turn'])"
+  "import sys,json; print('Tur:', json.load(sys.stdin)['turn'])"
 ```
 
-**Light Side — route Ring Bearer toward Weathertop:**
+**Light Side — Yüzük Taşıyıcısı'nı Weathertop'a yönlendir:**
 ```bash
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d '{
   "orderType":"ASSIGN_ROUTE",
@@ -54,10 +54,10 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d '{
   "turn":1,
   "pathIds":["shire-to-bree","bree-to-weathertop"]
 }'
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-**Dark Side — route Witch-King north toward Ring Bearer:**
+**Dark Side — Cadı-Kral'ı kuzeye, Yüzük Taşıyıcısı'na doğru yönlendir:**
 ```bash
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d '{
   "orderType":"ASSIGN_ROUTE",
@@ -71,118 +71,118 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d '{
     "lothlorien-to-rohan-plains"
   ]
 }'
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-**Wait ~2.5 minutes (5 turns × 30s) for unit positioning to complete:**
+**~2,5 dakika bekle (5 tur × 30 saniye) birimlerin konumlanması için:**
 ```bash
-# Poll until turn 5:
+# 5. tura kadar sorgula:
 until [ "$(curl -s 'http://localhost/game/state?playerId=light' | \
   python3 -c 'import sys,json; print(json.load(sys.stdin)["turn"])')" -ge 5 ]; do
   sleep 5
-done && echo "READY — start 15-min clock now"
+done && echo "HAZIR — şimdi 15 dakika saatini başlat"
 ```
 
-After turn 4 processing:
-- Ring Bearer is at **Weathertop** (arrived turn 3, stays there)
-- Witch-King is at **Lothlórien** (2 hops from Weathertop — within detection range 3)
+4. tur işlendikten sonra:
+- Yüzük Taşıyıcısı **Weathertop**'ta (3. turda geldi, orada bekliyor)
+- Cadı-Kral **Lothlórien**'de (Weathertop'tan 2 adım uzakta — tespit menzili 3 içinde)
 
 ---
 
-## ▶ START 15-MINUTE CLOCK
+## ▶ 15 DAKİKA SAATİNİ BAŞLAT
 
 ---
 
-## SECTION A — Distributed Architecture (2 minutes)
+## BÖLÜM A — Dağıtık Mimari (2 dakika)
 
-**What to say and show:**
+**Ne söyleyip göstereceğin:**
 
-Open a terminal. Run:
+Terminal aç. Şunu çalıştır:
 ```bash
 docker compose ps
 ```
 
-**Say:** "The system runs on Docker, simulating a distributed cluster. We have:
-- 3 Kafka brokers forming a cluster — no single point of failure
-- ZooKeeper for Kafka coordination
-- Confluent Schema Registry validating 13 Avro schemas
-- 3 stateless Go application instances (go-1, go-2, go-3) behind nginx
-- nginx acting as load balancer and SSE sticky router"
+**Söyle:** "Sistem Docker üzerinde çalışıyor ve dağıtık bir kümeyi simüle ediyor. Şunlar var:
+- Tek hata noktası olmayan 3 Kafka broker kümesi
+- Kafka koordinasyonu için ZooKeeper
+- 13 Avro şemasını doğrulayan Confluent Schema Registry
+- nginx arkasında 3 stateless Go uygulama instance'ı (go-1, go-2, go-3)
+- Yük dengeleyici ve SSE sticky router olarak görev yapan nginx"
 
-Show nginx config:
+nginx config'ini göster:
 ```bash
 cat nginx.conf | grep -A5 "upstream\|sse_backend"
 ```
 
-**Say:** "Regular API calls are round-robined across all three Go instances. SSE connections are pinned by player ID — Light Side always connects to go-1, Dark Side to go-2. This ensures each player gets a consistent stream of game events."
+**Söyle:** "Normal API çağrıları üç Go instance'ına round-robin dağıtılıyor. SSE bağlantıları oyuncu ID'sine göre sabitlenmiş — Light Side her zaman go-1'e, Dark Side go-2'ye bağlanıyor. Bu sayede her oyuncu tutarlı bir event akışı alıyor."
 
-Show live:
+Canlı göster:
 ```bash
-curl http://localhost/health          # hits one of go-1/go-2/go-3
-docker compose logs --tail=5 go-1    # show startup logs
+curl http://localhost/health          # go-1/go-2/go-3'den birine gider
+docker compose logs --tail=5 go-1    # başlangıç loglarını göster
 ```
 
-**Say:** "Each Go instance runs 9 goroutine types concurrently — Kafka consumers, EventRouter, CacheManager, TurnProcessor, two fan-out analysis pipelines, SSE goroutines, and an HTTP server. No shared mutable state crosses goroutine boundaries without a channel or mutex."
+**Söyle:** "Her Go instance'ı aynı anda 9 farklı goroutine tipini çalıştırıyor — Kafka consumer'lar, EventRouter, CacheManager, TurnProcessor, iki fan-out analiz pipeline'ı, SSE goroutine'leri ve bir HTTP sunucusu. Goroutine sınırlarını geçen hiçbir mutable paylaşımlı durum yok — her şey channel veya mutex üzerinden."
 
 ---
 
-## SECTION B — Code Walk (2 minutes)
+## BÖLÜM B — Kod Gezintisi (2 dakika)
 
-Show these files briefly (have them open in editor):
+Bu dosyaları kısaca göster (editörde açık olsun):
 
-**1. `option-b/internal/router/router.go` — information asymmetry enforcement point:**
+**1. `option-b/internal/router/router.go` — bilgi asimetrisi uygulama noktası:**
 ```bash
 cat option-b/internal/router/router.go | head -50
 ```
-**Say:** "EventRouter is the ONLY place in the codebase where topic routing happens. `game.ring.position` goes to Light Side only. `game.ring.detection` goes to Dark Side only. `game.broadcast` has ring-bearer stripped before delivery to Dark Side. One function, verified by tests with the race detector."
+**Söyle:** "EventRouter, kod tabanında topic yönlendirmesinin gerçekleştiği TEK yerdir. `game.ring.position` yalnızca Light Side'a gider. `game.ring.detection` yalnızca Dark Side'a gider. `game.broadcast`, Dark Side'a teslim edilmeden önce ring-bearer alanı sıyrılır. Tek bir fonksiyon, race detector ile test edilmiş."
 
-**2. `option-b/internal/game/turn.go` line 34 — pure function:**
-**Say:** "ProcessTurn is a pure function. It takes a world state snapshot and a list of validated orders, runs 13 deterministic steps, and returns a TurnResult. No I/O, no side effects. This is what makes Kafka replay possible — you can reconstruct any game state by replaying orders."
+**2. `option-b/internal/game/turn.go` satır 34 — saf fonksiyon:**
+**Söyle:** "ProcessTurn saf bir fonksiyondur. Dünya durumu anlık görüntüsü ve doğrulanmış emirler listesi alır, 13 deterministik adım çalıştırır ve TurnResult döner. I/O yok, yan etki yok. Kafka replay'i bu sayede mümkün — emirleri tekrar oynatarak herhangi bir oyun durumunu yeniden inşa edebilirsin."
 
-**3. `option-b/internal/kafka/validator.go` — Kafka Streams Topology 1:**
-**Say:** "OrderValidator implements a KTable-based order validation pipeline. It checks 8 rules: correct turn, unit ownership, path availability, adjacency, cooldowns. Valid orders produce to `game.orders.validated`; invalid orders go to `game.dlq`. After each turn the KTable is rebuilt from the updated cache so turn-2+ orders validate correctly."
+**3. `option-b/internal/kafka/validator.go` — Kafka Streams Topoloji 1:**
+**Söyle:** "OrderValidator, KTable tabanlı bir emir doğrulama pipeline'ı uygular. 8 kural kontrol eder: doğru tur, birim sahipliği, yol uygunluğu, komşuluk, bekleme süreleri. Geçerli emirler `game.orders.validated`'a üretilir; geçersiz emirler `game.dlq`'ya gider. Her turdan sonra KTable güncellenen cache'den yeniden inşa edilir, böylece 2. tur ve sonrasındaki emirler doğru şekilde doğrulanır."
 
 ---
 
-## SCENARIO 1 — Information Hiding (5 minutes)
+## SENARYO 1 — Bilgi Gizleme (5 dakika)
 
-> **State check first — confirm positions:**
+> **Önce durum kontrolü — konumları doğrula:**
 
 ```bash
-# Light Side sees Ring Bearer at Weathertop
+# Light Side Yüzük Taşıyıcısı'nı Weathertop'ta görüyor
 curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; d=json.load(sys.stdin); \
-  print('Turn:', d['turn']); print('RB:', d['ringBearer'])"
+  print('Tur:', d['turn']); print('YT:', d['ringBearer'])"
 
-# Dark Side sees empty position
+# Dark Side boş konum görüyor
 curl -s "http://localhost/game/state?playerId=dark" | \
   python3 -c "import sys,json; d=json.load(sys.stdin); \
-  print('Turn:', d['turn']); print('RB:', d['ringBearer'])"
+  print('Tur:', d['turn']); print('YT:', d['ringBearer'])"
 ```
 
-**Expected output:**
+**Beklenen çıktı:**
 ```
-Light Side → RB: {'currentRegion': 'weathertop'}
-Dark Side  → RB: {'currentRegion': '', 'lastDetectedRegion': '', 'lastDetectedTurn': 0}
+Light Side → YT: {'currentRegion': 'weathertop'}
+Dark Side  → YT: {'currentRegion': '', 'lastDetectedRegion': '', 'lastDetectedTurn': 0}
 ```
 
-**Say:** "Light Side can see the Ring Bearer at Weathertop. Dark Side sees empty string — the position is completely hidden. This is enforced in EventRouter, in WorldStateCache.GetPublicState, and by never publishing to game.ring.position on the Dark Side SSE channel."
+**Söyle:** "Light Side, Yüzük Taşıyıcısı'nı Weathertop'ta görebiliyor. Dark Side boş string görüyor — konum tamamen gizli. Bu EventRouter'da, WorldStateCache.GetPublicState'de ve Dark Side SSE kanalına hiçbir zaman game.ring.position yayınlanmamasıyla üç noktadan uygulanıyor."
 
-> **Show detection firing:**
+> **Tespitin tetiklenmesini göster:**
 
-Get current turn:
+Mevcut turu al:
 ```bash
 TURN=$(curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['turn'])")
-echo "Current turn: $TURN"
+echo "Mevcut tur: $TURN"
 ```
 
-**Point at both browser tabs side-by-side.**
+**Her iki tarayıcı sekmesine yan yana işaret et.**
 
-Submit a SEARCH_PATH order to raise surveillance on the path Ring Bearer is on, then watch the Event Log:
+Yüzük Taşıyıcısı'nın geçeceği yolda gözetleme artırmak için SEARCH_PATH emri gönder, sonra Event Log'u izle:
 ```bash
-# Dark Side: Witch-King searches path Ring Bearer will cross next turn
-# (witch-king is now at lothlorien, adjacent to moria-to-lothlorien)
+# Dark Side: Cadı-Kral, Yüzük Taşıyıcısı'nın sonraki turda geçeceği yolu arıyor
+# (cadı-kral şu an lothlórien'de, moria-to-lothlorien'e komşu)
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"orderType\":\"SEARCH_PATH\",
   \"playerId\":\"dark\",
@@ -192,24 +192,24 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
 }"
 ```
 
-Wait 30 seconds for the turn to fire. **Point at browser tabs.**
+Turun tetiklenmesi için 30 saniye bekle. **Tarayıcı sekmelerine işaret et.**
 
-**After tick:**
-- Dark Side Event Log: shows `RING_BEARER_DETECTED` or `RingBearerSpotted` event
-- Light Side Event Log: does NOT show this event
+**Tur sonrası:**
+- Dark Side Event Log'u: `RING_BEARER_DETECTED` veya `RingBearerSpotted` eventi gösterir
+- Light Side Event Log'u: bu eventi GÖSTERMEZ
 
 ```bash
-# Verify via API:
+# API üzerinden doğrula:
 curl -s "http://localhost/game/state?playerId=dark" | \
   python3 -c "import sys,json; d=json.load(sys.stdin); print('DarkView:', d['ringBearer'])"
-# Expected: lastDetectedRegion shows a value now
+# Beklenen: lastDetectedRegion artık bir değer gösteriyor
 ```
 
-**Say:** "Dark Side received the detection event. Light Side did not. The EventRouter enforces this at the channel level — there is no code path that can accidentally send ring-bearer position to the Dark Side SSE channel."
+**Söyle:** "Dark Side tespit eventini aldı. Light Side almadı. EventRouter bunu kanal seviyesinde uygular — Dark Side SSE kanalına yüzük taşıyıcısının konumunu yanlışlıkla gönderebilecek hiçbir kod yolu yoktur."
 
-**Verify with curl (show instructor running this live):**
+**Curl ile doğrula (eğitmen bunu canlı çalıştırsın):**
 ```bash
-# Three independent enforcement points:
+# Üç bağımsız uygulama noktası:
 echo "=== 1. REST API (DarkView) ===" && \
 curl -s "http://localhost/game/state?playerId=dark" | python3 -m json.tool | grep -A3 "ringBearer"
 
@@ -219,16 +219,16 @@ curl -s "http://localhost/game/state?playerId=light" | python3 -m json.tool | gr
 
 ---
 
-## SCENARIO 2 — Maia Dispatch and Path Mechanics (5 minutes)
+## SENARYO 2 — Maia Dispatch ve Yol Mekanikleri (5 dakika)
 
-> **Get current turn:**
+> **Mevcut turu al:**
 ```bash
 TURN=$(curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['turn'])")
-echo "Current turn: $TURN"
+echo "Mevcut tur: $TURN"
 ```
 
-> **Step 1: Block a path (Dark Side — Saruman at Isengard blocks adjacent path)**
+> **Adım 1: Bir yolu engelle (Dark Side — İsengard'daki Saruman komşu yolu bloke ediyor)**
 
 ```bash
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
@@ -238,10 +238,10 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"turn\":$TURN,
   \"pathId\":\"fangorn-to-isengard\"
 }"
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-> **Step 2: Same turn — Gandalf opens the blocked path (Maia Dispatch Demo)**
+> **Adım 2: Aynı tur — Gandalf bloke edilen yolu açıyor (Maia Dispatch Demo)**
 
 ```bash
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
@@ -251,10 +251,10 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"turn\":$TURN,
   \"targetPathId\":\"fangorn-to-isengard\"
 }"
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-> **Step 3: Same turn — Saruman corrupts a different path (PathCorrupted demo)**
+> **Adım 3: Aynı tur — Saruman farklı bir yolu bozuyor (PathCorrupted demo)**
 
 ```bash
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
@@ -264,17 +264,14 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"turn\":$TURN,
   \"targetPathId\":\"fords-of-isen-to-edoras\"
 }"
-# Wait — saruman already used BLOCK_PATH this turn. Let's check if duplicate order is rejected:
-# Actually BLOCK_PATH uses pathId, MAIA_ABILITY uses targetPathId — different units in different turns
-# Saruman submitted BLOCK_PATH. For MAIA_ABILITY, use a different turn or note that saruman 
-# has duplicate-unit-order protection. 
-# CORRECTION: Submit Saruman MAIA_ABILITY on the NEXT turn instead.
+# Bekle — saruman bu turda zaten BLOCK_PATH kullandı. Duplicate emir reddedilecek.
+# DÜZELTME: Saruman MAIA_ABILITY'yi bir sonraki turda gönder.
 ```
 
-**NOTE FOR INSTRUCTOR:** Saruman can only submit ONE order per turn. Submit the PathCorrupt on the next turn:
+**SUNUCU NOTU:** Saruman tur başına yalnızca bir emir gönderebilir. PathCorrupt'ı sonraki turda gönder:
 
 ```bash
-# Wait for turn to advance, then:
+# Turun geçmesini bekle, sonra:
 TURN=$((TURN + 1))
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"orderType\":\"MAIA_ABILITY\",
@@ -283,55 +280,55 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"turn\":$TURN,
   \"targetPathId\":\"fords-of-isen-to-edoras\"
 }"
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-**Wait for turn to fire. Show browser map.**
+**Turun tetiklenmesini bekle. Tarayıcı haritasını göster.**
 
-> **What to observe on the map after turn fires:**
+> **Tur tetiklendikten sonra haritada gözlemlenecekler:**
 
-- `fangorn-to-isengard` → shows as **blue dashed** (TEMPORARILY_OPEN) in both browsers
-- `fords-of-isen-to-edoras` → shows as **orange** (Threatened/high surveillance) after PathCorrupt
+- `fangorn-to-isengard` → her iki tarayıcıda da **mavi kesik çizgi** (TEMPORARILY_OPEN) olarak görünür
+- `fords-of-isen-to-edoras` → PathCorrupt sonrası **turuncu** (yüksek gözetleme) görünür
 
 ```bash
-# Verify path states:
+# Yol durumlarını doğrula:
 curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "
 import sys,json; d=json.load(sys.stdin)
 for p in d['paths']:
     if p['id'] in ['fangorn-to-isengard','fords-of-isen-to-edoras']:
-        print(p['id'], '→', p['status'], 'surveillance:', p['surveillanceLevel'])
+        print(p['id'], '→', p['status'], 'gözetleme:', p['surveillanceLevel'])
 "
 ```
 
-**Say:** "Both Gandalf and Saruman use the exact same order type: `MAIA_ABILITY`. The game engine dispatches to different effects purely by reading the unit's config — Gandalf has `maiaAbilityPaths = []` (empty), which means OpenPath behavior. Saruman has a non-empty list, which triggers CorruptPath. No unit ID string literals appear anywhere in the dispatch logic."
+**Söyle:** "Hem Gandalf hem Saruman tam olarak aynı emir tipini kullanıyor: `MAIA_ABILITY`. Oyun motoru, birim ID string sabitleri kullanmadan sadece birimin config'ini okuyarak farklı efektlere dispatch ediyor — Gandalf'ın `maiaAbilityPaths = []` (boş) olması OpenPath davranışı anlamına gelir. Saruman'ın boş olmayan listesi CorruptPath'i tetikler. Dispatch mantığında hiçbir yerde birim ID string sabiti geçmiyor."
 
-> **Show code briefly:**
+> **Kodu kısaca göster:**
 ```bash
 grep -A8 "MaiaAbilityPaths" option-b/internal/game/turn.go | head -15
 ```
 
-**Say:** "If `len(cfg.MaiaAbilityPaths) == 0` → Gandalf behavior. Otherwise → Saruman behavior. The config drives all dispatch."
+**Söyle:** "`len(cfg.MaiaAbilityPaths) == 0` ise → Gandalf davranışı. Aksi halde → Saruman davranışı. Config her şeyi yönlendiriyor."
 
-> **Wait 2 more turns — show Gandalf path reverting:**
+> **2 tur daha bekle — Gandalf yolunun geri döndüğünü göster:**
 
 ```bash
-# After 2 turns from when Gandalf opened the path:
+# Gandalf yolu açtıktan 2 tur sonra:
 curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "
 import sys,json; d=json.load(sys.stdin)
 for p in d['paths']:
     if p['id'] == 'fangorn-to-isengard':
-        print('fangorn-to-isengard status:', p['status'])
+        print('fangorn-to-isengard durumu:', p['status'])
 "
-# Expected: status back to BLOCKED (saruman still at isengard endpoint)
+# Beklenen: durum tekrar BLOCKED (saruman hala yol ucundaki bölgede)
 ```
 
-**Say:** "Gandalf's path was temporarily open for exactly 2 turns, then reverted because the blocking unit (Saruman) was still at the path endpoint. Saruman's corruption of fords-of-isen-to-edoras however is permanent — SurveillanceLevel raised to 3, it never resets."
+**Söyle:** "Gandalf'ın yolu tam olarak 2 tur açık kaldı, sonra bloke eden birim (Saruman) hala yol ucunda olduğu için geri döndü. Saruman'ın fords-of-isen-to-edoras üzerindeki bozulması ise kalıcı — SurveillanceLevel 3'e yükseltildi, hiç sıfırlanmaz."
 
-> **Show DLQ to prove the duplicate-order rejection:**
+> **Duplicate emir reddini kanıtlamak için DLQ'yu göster:**
 ```bash
-# Try submitting Gandalf again (cooldown = 3 turns)
+# Gandalf'ı tekrar göndermeyi dene (cooldown = 3 tur)
 TURN=$(curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['turn'])")
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
@@ -341,8 +338,8 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"turn\":$TURN,
   \"targetPathId\":\"fangorn-to-isengard\"
 }"
-# Expected: order accepted but will be REJECTED by validator → goes to DLQ
-# Then show DLQ:
+# Beklenen: emir kabul edilir ama validator tarafından REDDEDİLİR → DLQ'ya gider
+# Sonra DLQ'yu göster:
 docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic game.dlq --from-beginning --timeout-ms 3000 2>/dev/null | \
@@ -351,22 +348,22 @@ docker exec ring-of-the-middle-earth-kafka-1-1 \
 
 ---
 
-## SCENARIO 3 — Fault Tolerance and Exactly-Once (5 minutes)
+## SENARYO 3 — Hata Toleransı ve Exactly-Once (5 dakika)
 
-### Part A: Route Ring Bearer to Mount Doom
+### Bölüm A: Yüzük Taşıyıcısı'nı Cehennem Dağı'na Yönlendir
 
 ```bash
 TURN=$(curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['turn'])")
 RB=$(curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['ringBearer']['currentRegion'])")
-echo "Turn: $TURN, Ring Bearer at: $RB"
+echo "Tur: $TURN, Yüzük Taşıyıcısı: $RB"
 ```
 
-Submit full route to Mount Doom from current Ring Bearer position (adjust starting path based on where RB is):
+Mevcut konumdan Cehennem Dağı'na tam rota gönder (YT neredeyse oradaki başlangıç yolunu ayarla):
 
 ```bash
-# Ring Bearer should be at weathertop. Route:
+# Yüzük Taşıyıcısı weathertop'ta olmalı. Rota:
 curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
   \"orderType\":\"ASSIGN_ROUTE\",
   \"playerId\":\"light\",
@@ -382,67 +379,67 @@ curl -X POST http://localhost/order -H "Content-Type: application/json" -d "{
     \"mordor-to-mount-doom\"
   ]
 }"
-# Expected: {"status":"accepted"}
+# Beklenen: {"status":"accepted"}
 ```
 
-**Say:** "Ring Bearer has 7 steps to Mount Doom. Each turn it auto-advances one step. With 30-second turns, this takes 3.5 minutes. While we wait, I'll explain the consumer group architecture."
+**Söyle:** "Yüzük Taşıyıcısı'nın Cehennem Dağı'na 7 adımı var. Her turda otomatik olarak bir adım ilerler. 30 saniyelik turlarla bu 3,5 dakika sürer. Beklerken consumer group mimarisini açıklayacağım."
 
-**While waiting, explain (show docker logs):**
+**Beklerken açıkla (docker loglarını göster):**
 ```bash
-# Show 3 separate consumer groups
+# 3 ayrı consumer group'u göster
 docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-consumer-groups --bootstrap-server localhost:9092 --list
 ```
 
-**Say:** "Each Go instance subscribes with its own consumer group ID: game-engine-1, game-engine-2, game-engine-3. This means ALL THREE instances receive every validated order and process it independently. State lives in Kafka — the Go instances are stateless. This is why killing one instance doesn't lose any data."
+**Söyle:** "Her Go instance'ı kendi consumer group ID'siyle abone oluyor: game-engine-1, game-engine-2, game-engine-3. Bu, ÜÇ instance'ın da her doğrulanmış emri alıp bağımsız olarak işlediği anlamına geliyor. Durum Kafka'da yaşıyor — Go instance'ları stateless. Bu yüzden bir instance'ı öldürmek hiçbir veri kaybetmiyor."
 
-### Part B: Kill go-2 During Turn Processing
+### Bölüm B: Tur İşleme Sırasında go-2'yi Öldür
 
-**Wait until Ring Bearer is 1-2 turns from Mount Doom:**
+**Yüzük Taşıyıcısı Cehennem Dağı'na 1-2 tur kala bekle:**
 ```bash
-# Poll for Ring Bearer approaching mordor
+# YT mordor'a yaklaşana kadar sorgula
 until curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; rb=json.load(sys.stdin)['ringBearer']['currentRegion']; \
   print(rb); exit(0 if rb in ['mordor','dead-marshes'] else 1)" 2>/dev/null; do
   sleep 5
-done && echo "Ring Bearer near Mount Doom — ready to kill go-2"
+done && echo "Yüzük Taşıyıcısı Cehennem Dağı yakınında — go-2'yi öldürmeye hazır"
 ```
 
-**Kill go-2:**
+**go-2'yi öldür:**
 ```bash
 docker compose stop go-2
-echo "go-2 stopped"
+echo "go-2 durduruldu"
 ```
 
-**Immediately show Kafka rebalance in logs:**
+**Hemen Kafka rebalance loglarını göster:**
 ```bash
 docker compose logs kafka-1 --follow 2>&1 | grep -i "rebalance\|join\|leader" &
-# Let it run for ~10 seconds then Ctrl+C
+# ~10 saniye çalışmasına izin ver sonra Ctrl+C
 ```
 
-**Say:** "Kafka's consumer group protocol detects that game-engine-2 has gone offline. It triggers a rebalance — redistributing go-2's partitions to go-1 and go-3. This takes under 10 seconds. The game continues uninterrupted on the remaining two instances."
+**Söyle:** "Kafka'nın consumer group protokolü game-engine-2'nin çevrimdışı olduğunu algıladı. Rebalance tetiklendi — go-2'nin partition'ları go-1 ve go-3'e yeniden dağıtıldı. Bu 10 saniyeden az sürer. Oyun kalan iki instance'da kesintisiz devam eder."
 
-**Verify game continues:**
+**Oyunun devam ettiğini doğrula:**
 ```bash
-sleep 35  # wait for next turn tick
+sleep 35  # sonraki tur tick'ini bekle
 curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; d=json.load(sys.stdin); \
-  print('Turn:', d['turn'], '| RB:', d['ringBearer']['currentRegion'])"
+  print('Tur:', d['turn'], '| YT:', d['ringBearer']['currentRegion'])"
 ```
 
-**Expected:** Turn incremented, Ring Bearer moved — proof that go-1 and go-3 continued processing without go-2.
+**Beklenen:** Tur ilerledi, Yüzük Taşıyıcısı hareket etti — go-1 ve go-3'ün go-2 olmadan işlemeye devam ettiğinin kanıtı.
 
-### Part C: Ring Bearer Reaches Mount Doom — Game Over
+### Bölüm C: Yüzük Taşıyıcısı Cehennem Dağı'na Ulaşıyor — Oyun Bitti
 
 ```bash
-# Poll until mount-doom
+# mount-doom'a kadar sorgula
 until curl -s "http://localhost/game/state?playerId=light" | \
   python3 -c "import sys,json; \
   rb=json.load(sys.stdin)['ringBearer']['currentRegion']; \
   exit(0 if rb == 'mount-doom' else 1)" 2>/dev/null; do sleep 5; done
-echo "Ring Bearer at Mount Doom!"
+echo "Yüzük Taşıyıcısı Cehennem Dağı'nda!"
 
-# Check game.broadcast for GameOver event:
+# game.broadcast'te GameOver eventi kontrol et:
 docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-console-consumer \
   --bootstrap-server localhost:9092 \
@@ -457,55 +454,55 @@ for line in sys.stdin:
         d = json.loads(line)
         if 'winner' in d or 'game-over' in str(d):
             count += 1
-            print(f'GameOver event #{count}:', d)
+            print(f'GameOver eventi #{count}:', d)
     except:
         pass
-print(f'Total GameOver events in game.broadcast: {count}')
+print(f'game.broadcast toplam GameOver eventi: {count}')
 "
 ```
 
-**Expected output:**
+**Beklenen çıktı:**
 ```
-GameOver event #1: {'winner': 'FREE_PEOPLES', 'cause': 'RING_DESTROYED', 'turn': N, ...}
-Total GameOver events in game.broadcast: 1
+GameOver eventi #1: {'winner': 'FREE_PEOPLES', 'cause': 'RING_DESTROYED', 'turn': N, ...}
+game.broadcast toplam GameOver eventi: 1
 ```
 
-**Say:** "Exactly one GameOver event in game.broadcast. This is because runTurnProcessor calls ProduceSync exactly once when result.Winner is non-empty, then immediately returns — the goroutine exits. No further turns can be processed. The Kafka topic is the durable record."
+**Söyle:** "game.broadcast'te tam olarak bir GameOver eventi var. Bunun nedeni runTurnProcessor'ın result.Winner boş olmadığında ProduceSync'i tam olarak bir kez çağırması ve ardından hemen return etmesidir — goroutine çıkar. Sonraki turlar işlenemez. Kafka topic'i kalıcı kayıttır."
 
-### Part D: Restart go-2 and Verify Recovery
+### Bölüm D: go-2'yi Yeniden Başlat ve Kurtarımı Doğrula
 
 ```bash
 docker compose start go-2
 sleep 5
-echo "go-2 restarted"
+echo "go-2 yeniden başlatıldı"
 
-# Verify go-2 rejoined consumer group:
+# go-2'nin consumer group'a yeniden katıldığını doğrula:
 docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-consumer-groups --bootstrap-server localhost:9092 \
   --group game-engine-2 --describe 2>/dev/null | head -10
 ```
 
 ```bash
-# Verify go-2 has correct game state:
+# go-2'nin doğru oyun durumuna sahip olduğunu doğrula:
 curl -s "http://go-2:8080/game/state?playerId=light" 2>/dev/null | \
   python3 -c "import sys,json; d=json.load(sys.stdin); \
-  print('go-2 turn:', d['turn'], '| RB:', d['ringBearer']['currentRegion'])"
+  print('go-2 turu:', d['turn'], '| YT:', d['ringBearer']['currentRegion'])"
 ```
 
-*(If direct curl to go-2 doesn't work from host, check via Docker network)*
+*(go-2'ye host'tan doğrudan curl çalışmazsa Docker network üzerinden kontrol et)*
 
-**Say:** "go-2 rejoined the consumer group. Kafka replayed the partition offsets from the point go-2 left off. go-2 reconstructed its WorldStateCache from the event stream — no manual intervention, no data loss. This is the 'state in Kafka' design principle."
+**Söyle:** "go-2 consumer group'a yeniden katıldı. Kafka, go-2'nin ayrıldığı noktadan itibaren partition offset'lerini tekrar oynadı. go-2, event akışından WorldStateCache'ini yeniden inşa etti — manuel müdahale yok, veri kaybı yok. Bu 'durum Kafka'da' tasarım ilkesidir."
 
 ---
 
-## SECTION C — Unit Tests (1 minute)
+## BÖLÜM C — Birim Testler (1 dakika)
 
 ```bash
 cd /Users/emreyildiz/distrubuted-2/ring-of-the-middle-earth
 make test
 ```
 
-**Expected output:**
+**Beklenen çıktı:**
 ```
 === RUN   TestCombat_TiePlains              PASS
 === RUN   TestCombat_FortressTerrain        PASS
@@ -523,61 +520,61 @@ make test
 ok  github.com/rotr/ring-of-the-middle-earth/tests  (race: PASS)
 ```
 
-**Say:** "13 unit tests, all passing, including the race detector (`-race` flag). The router tests directly assert that DarkView.RingBearerRegion is always empty under concurrent reads and writes — the same invariant we just demonstrated live. Tests run without Docker — no Kafka dependency."
+**Söyle:** "13 birim test, hepsi geçiyor, race detector (`-race` flag) dahil. Router testleri doğrudan DarkView.RingBearerRegion'ın eşzamanlı okuma ve yazmalarda her zaman boş olduğunu iddia ediyor — az önce canlı olarak gösterdiğimiz aynı değişmez. Testler Docker olmadan çalışıyor — Kafka bağımlılığı yok."
 
 ---
 
-## SECTION D — Report (30 seconds)
+## BÖLÜM D — Rapor (30 saniye)
 
 ```bash
-# Show report structure:
-wc -l REPORT.md    # 358 lines
-head -60 REPORT.md  # show table of contents
+# Rapor yapısını göster:
+wc -l REPORT.md    # 358 satır
+head -60 REPORT.md  # içindekiler tablosunu göster
 ```
 
-**Say:** "The report covers 16 sections: architecture, the 9-goroutine design, all 10 Kafka topics, the three demo scenarios as code walkthroughs, the 13-step turn processing pipeline, and notably Section 12 — a table of 7 bugs found and fixed during integration testing, each with root cause and fix. The end-to-end gameplay verification section documents the Ring Bearer's path turn-by-turn."
+**Söyle:** "Rapor 16 bölüm kapsıyor: mimari, 9-goroutine tasarımı, tüm 10 Kafka topic'i, üç demo senaryosu kod walkthrough olarak, 13 adımlı tur işleme pipeline'ı ve özellikle Bölüm 12 — entegrasyon testleri sırasında bulunan ve düzeltilen 7 hatanın tablosu, her biri kök neden ve çözümüyle. Uçtan uca oyun doğrulama bölümü Yüzük Taşıyıcısı'nın turdan tura rotasını belgeliyor."
 
 ---
 
-## ▶ STOP 15-MINUTE CLOCK
+## ▶ 15 DAKİKA SAATİNİ DURDUR
 
 ---
 
-## Q&A PREPARATION — Likely Questions
+## SORU-CEVAP HAZIRLIĞI — Olası Sorular
 
-**Q: Why did you choose Go over Akka?**
-> "Goroutines map 1:1 to the specification's goroutine diagram. The stateless design with Kafka as the state store eliminates the need for actor persistence frameworks. go test -race directly verifies the information asymmetry invariant. Akka would have given us better turn-processing atomicity via PersistentActor and better information hiding via ClusterSingleton — I discuss both tradeoffs in Section 14 of the report."
+**S: Neden Akka yerine Go seçtiniz?**
+> "Goroutine'ler, spesifikasyonun goroutine diyagramıyla bire bir örtüşüyor. Kafka'nın state store olarak kullanıldığı stateless tasarım, actor persistence framework'lerine olan ihtiyacı ortadan kaldırıyor. `go test -race`, bilgi asimetrisi değişmezini doğrudan doğruluyor. Akka, PersistentActor ile daha iyi tur işleme atomikliği ve ClusterSingleton ile daha iyi bilgi gizleme sağlardı — her iki değiş tokuşu da raporun 14. bölümünde ele alıyorum."
 
-**Q: How is exactly-once guaranteed?**
-> "runTurnProcessor calls ProduceSync once when result.Winner is non-empty, then the goroutine returns. No subsequent ticks can fire. The Kafka topic is append-only — you can verify with kafka-console-consumer that exactly one GameOver message exists with --from-beginning."
+**S: Exactly-once nasıl garanti ediliyor?**
+> "runTurnProcessor, result.Winner boş olmadığında ProduceSync'i bir kez çağırır, ardından goroutine return eder. Sonraki tick'ler tetiklenemez. Kafka topic'i append-only'dir — `--from-beginning` ile kafka-console-consumer kullanarak game.broadcast'te tam olarak bir GameOver mesajı olduğunu doğrulayabilirsiniz."
 
-**Q: What happens if go-1 (the primary turn-processor) crashes?**
-> "All three instances run independent TurnProcessor goroutines. Kafka's consumer group rebalance within seconds redistributes the partitions. The next instance to receive a validated order on game.orders.validated partition will process the next turn. There's a brief overlap window where two instances might attempt to process the same turn, but since ProcessTurn is pure and idempotent (same input produces same output), the result is consistent."
+**S: go-1 (birincil tur işlemcisi) çökerse ne olur?**
+> "Her üç instance da bağımsız TurnProcessor goroutine'leri çalıştırıyor. Kafka'nın consumer group rebalance'ı saniyeler içinde partition'ları yeniden dağıtıyor. game.orders.validated partition'ında doğrulanmış bir emir alan bir sonraki instance sonraki turu işleyecek. İki instance'ın aynı turu işlemeye çalıştığı kısa bir örtüşme penceresi var, ancak ProcessTurn saf ve idempotent olduğundan (aynı giriş aynı çıktıyı üretir) sonuç tutarlıdır."
 
-**Q: How does the Kafka DLQ work?**
-> "Any order that fails validation is written to game.dlq with a structured error: originalTopic, errorCode, errorMessage, rawPayload. Error codes are typed constants in the game package: WRONG_TURN, NOT_YOUR_UNIT, INVALID_PATH, PATH_BLOCKED, UNIT_NOT_ADJACENT, DUPLICATE_UNIT_ORDER, ABILITY_ON_COOLDOWN."
+**S: Kafka DLQ nasıl çalışıyor?**
+> "Doğrulamayı geçemeyen herhangi bir emir, yapılandırılmış bir hatayla game.dlq'ya yazılır: originalTopic, errorCode, errorMessage, rawPayload. Hata kodları game paketindeki tiplendirilmiş sabitlerdir: WRONG_TURN, NOT_YOUR_UNIT, INVALID_PATH, PATH_BLOCKED, UNIT_NOT_ADJACENT, DUPLICATE_UNIT_ORDER, ABILITY_ON_COOLDOWN."
 
-**Q: How does the ring-bearer's position stay hidden in the database/log?**
-> "The ring bearer's true position is never written to any Kafka topic that the Dark Side consumes. game.ring.position is not in the Dark Side consumer's subscription list. game.broadcast is stripped by stripRingBearer() before delivery to the Dark Side SSE channel. The REST endpoint /game/state?playerId=dark always returns currentRegion='' regardless of actual position."
+**S: Yüzük taşıyıcısının konumu veritabanında/logda nasıl gizli kalıyor?**
+> "Yüzük taşıyıcısının gerçek konumu, Dark Side'ın tükettiği hiçbir Kafka topic'ine yazılmıyor. game.ring.position, Dark Side consumer'ın abonelik listesinde değil. game.broadcast, Dark Side SSE kanalına teslim edilmeden önce stripRingBearer() tarafından sıyrılıyor. REST endpoint'i /game/state?playerId=dark her zaman gerçek konumdan bağımsız olarak currentRegion='' döndürüyor."
 
-**Q: Could a malicious client call /game/state?playerId=light to cheat?**
-> "In a real deployment you would authenticate players and bind the playerId to a session token. The current implementation trusts the playerId parameter — this is an in-scope simplification since the assessment focuses on distributed systems architecture, not auth."
+**S: Kötü niyetli bir istemci /game/state?playerId=light çağırarak hile yapabilir mi?**
+> "Gerçek bir dağıtımda oyuncuları kimlik doğrulayıp playerId'yi bir oturum token'ına bağlarsınız. Mevcut uygulama playerId parametresine güveniyor — bu, değerlendirmenin auth değil dağıtık sistem mimarisine odaklandığı göz önüne alındığında kapsam içi bir basitleştirmedir."
 
 ---
 
-## QUICK REFERENCE — Critical Commands
+## HIZLI REFERANS — Kritik Komutlar
 
 ```bash
-# Game state
+# Oyun durumu
 curl -s "http://localhost/game/state?playerId=light" | python3 -m json.tool
 curl -s "http://localhost/game/state?playerId=dark" | python3 -m json.tool
 
-# Submit order (replace values as needed)
+# Emir gönder (değerleri gerektiği gibi değiştir)
 curl -X POST http://localhost/order \
   -H "Content-Type: application/json" \
-  -d '{"orderType":"ASSIGN_ROUTE","playerId":"light","unitId":"ring-bearer","turn":N,"pathIds":["path-1","path-2"]}'
+  -d '{"orderType":"ASSIGN_ROUTE","playerId":"light","unitId":"ring-bearer","turn":N,"pathIds":["yol-1","yol-2"]}'
 
-# Check Kafka topics
+# Kafka topic'leri kontrol et
 docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic game.broadcast --from-beginning --timeout-ms 3000 2>/dev/null
@@ -586,24 +583,24 @@ docker exec ring-of-the-middle-earth-kafka-1-1 \
   kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic game.dlq --from-beginning --timeout-ms 3000 2>/dev/null
 
-# Container control
+# Container kontrolü
 docker compose stop go-2
 docker compose start go-2
 docker compose logs kafka-1 --follow
 
-# Unit tests
+# Birim testler
 make test
 
-# Full restart (wipes game state)
+# Tam yeniden başlatma (oyun durumunu sıfırlar)
 docker compose down -v && make up
 ```
 
 ---
 
-## VALID PATH IDs (for submitting orders)
+## GEÇERLİ YOL ID'LERİ (emir göndermek için)
 
 ```
-shire-to-bree               bree → the-shire / bree
+shire-to-bree               the-shire → bree
 bree-to-weathertop          bree → weathertop
 bree-to-rivendell           bree → rivendell
 bree-to-tharbad             bree → tharbad
@@ -614,7 +611,7 @@ moria-to-lothlorien         moria → lothlorien
 lothlorien-to-emyn-muil     lothlorien → emyn-muil
 emyn-muil-to-dead-marshes   emyn-muil → dead-marshes
 dead-marshes-to-mordor      dead-marshes → mordor
-mordor-to-mount-doom        mordor → mount-doom
+mordor-to-mount-doom        mordor → mount-doom (Cehennem Dağı)
 fangorn-to-isengard         fangorn ↔ isengard
 fords-of-isen-to-edoras     fords-of-isen ↔ edoras
 osgiliath-to-minas-morgul   osgiliath ↔ minas-morgul
@@ -622,20 +619,20 @@ osgiliath-to-minas-morgul   osgiliath ↔ minas-morgul
 
 ---
 
-## UNIT POSITIONS (Fresh Game Start)
+## BİRİM KONUMLARI (Yeni Oyun Başlangıcı)
 
-| Unit | Side | Region | Class | Key stat |
+| Birim | Taraf | Bölge | Sınıf | Önemli özellik |
 |---|---|---|---|---|
 | ring-bearer | Light | the-shire | RingBearer | — |
-| aragorn | Light | bree | FellowshipGuard | strength 5, leadership |
-| legolas | Light | rivendell | FellowshipGuard | strength 3 |
-| gimli | Light | rivendell | FellowshipGuard | strength 3 |
-| gandalf | Light | rivendell | Maia | opens blocked paths, cooldown 3 |
-| rohan-cavalry | Light | edoras | FellowshipGuard | strength 4 |
-| gondor-army | Light | minas-tirith | GondorArmy | strength 5, can fortify |
-| witch-king | Dark | minas-morgul | Nazgul | detectionRange 2, indestructible |
-| nazgul-2 | Dark | minas-morgul | Nazgul | detectionRange 1, respawns |
-| nazgul-3 | Dark | minas-morgul | Nazgul | detectionRange 1, respawns |
-| saruman | Dark | isengard | Maia | corrupts paths, cooldown 2 |
-| uruk-hai-legion | Dark | isengard | UrukHaiLegion | ignoresFortress |
-| sauron | Dark | mordor | Maia | indestructible, boosts detection range |
+| aragorn | Light | bree | FellowshipGuard | güç 5, liderlik |
+| legolas | Light | rivendell | FellowshipGuard | güç 3 |
+| gimli | Light | rivendell | FellowshipGuard | güç 3 |
+| gandalf | Light | rivendell | Maia | bloke yolları açar, bekleme 3 |
+| rohan-cavalry | Light | edoras | FellowshipGuard | güç 4 |
+| gondor-army | Light | minas-tirith | GondorArmy | güç 5, kale inşa edebilir |
+| witch-king | Dark | minas-morgul | Nazgul | tespit menzili 2, yıkılamaz |
+| nazgul-2 | Dark | minas-morgul | Nazgul | tespit menzili 1, yeniden doğar |
+| nazgul-3 | Dark | minas-morgul | Nazgul | tespit menzili 1, yeniden doğar |
+| saruman | Dark | isengard | Maia | yolları bozar, bekleme 2 |
+| uruk-hai-legion | Dark | isengard | UrukHaiLegion | kaleyi yoksayar |
+| sauron | Dark | mordor | Maia | yıkılamaz, tespit menzilini artırır |
